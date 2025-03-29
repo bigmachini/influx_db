@@ -150,7 +150,7 @@ docker-compose up -d --build
 
 ```bash
 echo "DOMAIN_NAME=metrics.prod.example.com" >> .env
-echo "HOST_DATA_PATH=/mnt/nvme/influx_data" >> .env
+echo "HOST_DATA_PATH=/opt/volumes/influx_data" >> .env
 ```
 
 ### Performance Tuning
