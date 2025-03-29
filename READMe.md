@@ -138,13 +138,13 @@ docker-compose up -d --build
 
 ### Environment Variables
 
-| Variable                  | Description                                                | Example                   |
-|---------------------------|------------------------------------------------------------|---------------------------|
-| `DOMAIN_NAME`             | Your public domain name for HTTPS access                   | `metrics.yourcompany.com` |
-| `INFLUXDB_ADMIN_PASSWORD` | Admin password for initial setup (automatically generated) | `$(openssl rand -hex 16)` |
-| `HOST_DATA_PATH`          | Absolute path to SSD storage for time-series data          | `/mnt/ssd/influx_data`    |
-| `INFLUXDB_ADMIN_TOKEN`    | API token for admin operations (automatically generated)   | `$(openssl rand -hex 32)` |
-| `CERTBOT_EMAIL`           | Email for Let's Encrypt certificate expiry notices         | `admin@yourdomain.com`    |
+| Variable                  | Description                                                | Example                    |
+|---------------------------|------------------------------------------------------------|----------------------------|
+| `DOMAIN_NAME`             | Your public domain name for HTTPS access                   | `metrics.yourcompany.com`  |
+| `INFLUXDB_ADMIN_PASSWORD` | Admin password for initial setup (automatically generated) | `$(openssl rand -hex 16)`  |
+| `HOST_DATA_PATH`          | Absolute path to SSD storage for time-series data          | `/opt/volumes/influx_data` |
+| `INFLUXDB_ADMIN_TOKEN`    | API token for admin operations (automatically generated)   | `$(openssl rand -hex 32)`  |
+| `CERTBOT_EMAIL`           | Email for Let's Encrypt certificate expiry notices         | `admin@yourdomain.com`     |
 
 **Usage Example:**
 
