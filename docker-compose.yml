@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # InfluxDB Core
+  influxdb:
+    image: influxdb:2.7.4
+    container_name: influxdb_prod
+    restart: unless-stopped
+    expose:
+      - "8086"  # Only accessible within Docker network
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin_prod
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=prod_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=prod_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+      # Performance
+      - INFLUXD_QUERY_MEMORY_BYTES=2147483648  # 2GB
+    volumes:
+      - influx_data:/var/lib/influxdb2
+      - influx_config:/etc/influxdb2
+    ulimits:
+      nofile: 262144
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8086/health || exit 1"]
+      interval: 30s
+
+  # Certbot for TLS
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    entrypoint: "/bin/sh -c"
+    command: |
+      "certbot certonly --webroot -w /var/www/certbot \
+      --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email \
+      -d ${DOMAIN_NAME} --dry-run && \
+      trap exit TERM; while :; do certbot renew; sleep 12h & wait $!; done;"
+    depends_on:
+      - nginx
+    networks:
+      - influx_net
+
+  # NGINX with Certbot integration
+  nginx:
+    image: nginx:1.25
+    container_name: influx_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    depends_on:
+      - influxdb
+    networks:
+      - influx_net
+
+  # Telegraf Monitoring
+  telegraf:
+    image: telegraf:1.28
+    container_name: telegraf_prod
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+    environment:
+      - INFLUX_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+    depends_on:
+      - influxdb
+    networks:
+      - influx_net
+
+volumes:
+  influx_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOST_DATA_PATH:-./data}
+      o: bind,noatime
+  influx_config:
+    driver: local
+
+networks:
+  influx_net:
+    driver: bridge
